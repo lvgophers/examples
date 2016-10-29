@@ -1,0 +1,98 @@
+Code Generation with Go
+18:30 2 Nov 2016
+
+Јаκе Ваttеу
+Las Vegas Gophers
+http://j7bdev.github.io
+@j7bdev
+
+* Why generate source code?
+
+Using a program to generate source code from existing source or other inputs 
+has many advantages:
+
+- Reduce typing (productivity)
+- Eliminate errors (typos, incorrect interface signatures)
+- Establish conventions (database schema, serialization)
+
+The advantages are so great, code generation is built in to the Go toolchain:
+
+- `//go:generate` directive
+- `go generate` tool
+
+But sometimes code generation has one-off requirements or needs "disposable"
+tools.
+
+The Go standard library has tools to facilitate creating Go source.
+
+* The standard library packages
+
+ go/format
+
+Has functions that give similar output to `gofmt` or `go format` and catches
+gross errors.
+
+To parse existing code and modify it or generate new code, other packages
+in the go/* hierarchy are useful:
+
+ go/ast
+ go/parser
+ go/token
+
+* A simple example
+
+Sometimes the "documentation" for a web api is mostly an example of the output.
+If the output is a JSON object, a trivial struct can be generated:
+
+.code structify/structify.go  /START OMIT/,/END OMIT/
+
+ go get github.com/lvgophers/codegeneration/structify
+
+* An in-place example
+
+Adding struct tags for the JSON encoder is tedious. Fortunately, it can 
+(generally) be automated:
+
+.code tagify/tagify.go  /START OMIT/,/END OMIT/
+
+ go get github.com/lvgophers/codegeneration/tagify
+
+* A note about the go/* packages
+
+These packages can be difficult. However, learning
+them gives great insight into how Go works, compilers
+in general, and language design. 
+
+Some resources online give the impression the only way 
+to generate Go code is building an AST using these packages, 
+however Go source is just text and any mechanism that can
+output text is adequate, and the "go/format" package will
+return errors if gross errors exist in the generated code.
+
+* Using the //go:generate directive
+
+The //go:generate directive is inspected when `go generate` is run,
+and runs a command with certain environment variables.
+
+This gives you a way to run code generation and configuration tools
+that aligns well with the Go toolchain.
+
+It also lets you treat Go source as a scripting language:
+
+ //go:generate go run somefilethatsamainpackage.go
+
+* Using //go:generate as a Makefile substitute
+
+The problems our Alphabet friends seem to be having with the context package changing places got me thinking of ways to skin that cat.
+
+ go get github.com/lvgophers/codegeneration/pseudomake
+
+This example isn't particularly smart (can be done better with build tags), but the first example I made along these lines was called dumbexample.
+
+The gist of it is if it's run without go generate, it will suggest running go generate, and the `Makefile/make.go` will generate code based on if `$GOROOT/src/context` exists, falling back to a vendored `golang.org/x/net/context` to generate the project-local `Context` functions and types.
+
+* To conclude
+
+- ABG (Always Be Generating)
+- Start with "go/format" and `gofmt` then if you need to get into the AST and parsers
+- Try to make one-off tools generic enough to be reused or adapted
